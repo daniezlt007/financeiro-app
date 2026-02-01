@@ -117,31 +117,42 @@ watch(
                 </Dropdown>
                 <!-- ▲ Fim do menu Pagamentos -->
 
-                <!-- Links para funcionários (não admin) -->
-                <template v-if="!user.is_admin">
-                  <NavLink :href="route('clientes.index')" :active="route().current('clientes.*')">
-                    Clientes
-                  </NavLink>
-                  <!---<NavLink :href="route('produtos.index')" :active="route().current('produtos.*')">
-                    Produtos
-                  </NavLink>-->
-                  <NavLink :href="route('servicos.index')" :active="route().current('servicos.*')">
-                    Serviços
-                  </NavLink>
-                </template>
+                <!-- ▼ Cadastros (dropdown) - todos os usuários -->
+                <Dropdown align="left" width="48">
+                  <template #trigger>
+                    <button
+                      type="button"
+                      class="inline-flex items-center h-16 px-3 text-sm font-medium transition text-dekra-200 hover:text-dekra-500"
+                    >
+                      <span
+                        :class="(route().current('clientes.*') || route().current('servicos.*') || route().current('produtos.*') || route().current('parceiros.*')) ? 'text-dekra-500 font-semibold' : ''"
+                      >
+                        Cadastros
+                      </span>
+                      <svg class="ms-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/>
+                      </svg>
+                    </button>
+                  </template>
+                  <template #content>
+                    <DropdownLink :href="route('clientes.index')" :class="{ 'font-semibold': route().current('clientes.*') }">
+                      Clientes
+                    </DropdownLink>
+                    <DropdownLink :href="route('servicos.index')" :class="{ 'font-semibold': route().current('servicos.*') }">
+                      Serviços
+                    </DropdownLink>
+                    <DropdownLink :href="route('parceiros.index')" :class="{ 'font-semibold': route().current('parceiros.*') }">
+                      Parceiros
+                    </DropdownLink>
+                    <DropdownLink v-if="user.is_admin" :href="route('produtos.index')" :class="{ 'font-semibold': route().current('produtos.*') }">
+                      Produtos
+                    </DropdownLink>
+                  </template>
+                </Dropdown>
+                <!-- ▲ Fim do menu Cadastros -->
 
                 <!-- Links para admin -->
                 <template v-if="user.is_admin">
-                  <NavLink :href="route('clientes.index')" :active="route().current('clientes.*')">
-                    Clientes
-                  </NavLink>
-                  <NavLink :href="route('servicos.index')" :active="route().current('servicos.*')">
-                    Serviços
-                  </NavLink>
-                  <NavLink :href="route('produtos.index')" :active="route().current('produtos.*')">
-                    Produtos
-                  </NavLink>
-                  
                   <!-- ▼ Financeiro (dropdown com subitens) - apenas admin -->
                   <Dropdown align="left" width="48">
                     <template #trigger>
@@ -282,31 +293,23 @@ watch(
               Baixa em Lote
             </ResponsiveNavLink>
 
-            <!-- Links para funcionários (não admin) -->
-            <template v-if="!user.is_admin">
-              <ResponsiveNavLink :href="route('clientes.index')" :active="route().current('clientes.*')">
-                Clientes
-              </ResponsiveNavLink>
-              <ResponsiveNavLink :href="route('produtos.index')" :active="route().current('produtos.*')">
-                Produtos
-              </ResponsiveNavLink>
-              <ResponsiveNavLink :href="route('servicos.index')" :active="route().current('servicos.*')">
-                Serviços
-              </ResponsiveNavLink>
-            </template>
+            <!-- Seção Cadastros -->
+            <div class="px-3 pt-2 text-xs uppercase text-dekra-300">Cadastros</div>
+            <ResponsiveNavLink :href="route('clientes.index')" :active="route().current('clientes.*')">
+              Clientes
+            </ResponsiveNavLink>
+            <ResponsiveNavLink :href="route('servicos.index')" :active="route().current('servicos.*')">
+              Serviços
+            </ResponsiveNavLink>
+            <ResponsiveNavLink :href="route('parceiros.index')" :active="route().current('parceiros.*')">
+              Parceiros
+            </ResponsiveNavLink>
+            <ResponsiveNavLink v-if="user.is_admin" :href="route('produtos.index')" :active="route().current('produtos.*')">
+              Produtos
+            </ResponsiveNavLink>
 
             <!-- Links para admin -->
             <template v-if="user.is_admin">
-              <ResponsiveNavLink :href="route('clientes.index')" :active="route().current('clientes.*')">
-                Clientes
-              </ResponsiveNavLink>
-              <ResponsiveNavLink :href="route('servicos.index')" :active="route().current('servicos.*')">
-                Serviços
-              </ResponsiveNavLink>
-              <ResponsiveNavLink :href="route('produtos.index')" :active="route().current('produtos.*')">
-                Produtos
-              </ResponsiveNavLink>
-              
               <!-- Submenu Financeiro -->
               <div class="border-l-4 border-dekra-500 pl-4 space-y-1">
                 <div class="text-xs font-semibold text-dekra-300 uppercase tracking-wider px-4 py-2">

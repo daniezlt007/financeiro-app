@@ -5,7 +5,8 @@ use App\Http\Controllers\{
   DashboardController, ClienteController, ServicoController, ProdutoController,
   VendaController, PagamentoController, MetaController, RecorrenciaController,
   ProfileController, EmpresaController, FuncionarioController, UserController,
-  TransacaoController, AuditLogController, RelatorioPagamentosController
+  TransacaoController, AuditLogController, RelatorioPagamentosController,
+  ParceiroController
 };
 
 Route::get('/', fn() => redirect()->route('dashboard'));
@@ -25,6 +26,8 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/clientes/buscar-por-nome', [ClienteController::class, 'buscarPorNome'])->name('clientes.buscarPorNome');
   Route::resource('clientes', ClienteController::class);
   Route::resource('servicos', ServicoController::class);
+  Route::get('/parceiros/buscar-por-nome', [ParceiroController::class, 'buscarPorNome'])->name('parceiros.buscarPorNome');
+  Route::resource('parceiros', ParceiroController::class);
   Route::resource('produtos', ProdutoController::class);
   Route::get('/relatorios/vendas', [\App\Http\Controllers\RelatorioVendasController::class, 'index'])
     ->name('relatorios.vendas');
