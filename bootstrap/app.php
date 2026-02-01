@@ -16,10 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Registrar middleware de permissões
+        // Registrar middleware de permissões (apenas admin/funcionario/empresa)
         $middleware->alias([
             'permissions' => \App\Http\Middleware\CheckPermissions::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

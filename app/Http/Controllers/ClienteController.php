@@ -9,14 +9,12 @@ class ClienteController extends Controller
 {
     public function index()
     {
-        $this->authorize('clientes.visualizar');
         $data = Cliente::latest()->paginate(15);
         return Inertia::render('Clientes/Index', ['data' => $data]);
     }
 
     public function create()
     {
-        $this->authorize('clientes.criar');
         $user = auth()->user();
         $empresas = collect();
         
@@ -32,7 +30,6 @@ class ClienteController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('clientes.criar');
         $user = auth()->user();
         
         // Definir regras de validação baseadas no tipo de usuário
@@ -70,19 +67,16 @@ class ClienteController extends Controller
 
     public function show(Cliente $cliente)
     {
-        $this->authorize('clientes.visualizar');
         return Inertia::render('Clientes/Show', ['item' => $cliente]);
     }
 
     public function edit(Cliente $cliente)
     {
-        $this->authorize('clientes.editar');
         return Inertia::render('Clientes/Edit', ['item' => $cliente]);
     }
 
     public function update(Request $request, Cliente $cliente)
     {
-        $this->authorize('clientes.editar');
         $validated = $request->validate(['nome_completo'=>'required|string','cpf_cnpj'=>'nullable|string','telefone'=>'nullable|string','email'=>'nullable|email','endereco_completo'=>'nullable|string','placa_veiculo'=>'nullable|string']);
         $cliente->update($validated);
         return redirect()->route('clientes.index')->with('success','Atualizado');
@@ -90,7 +84,6 @@ class ClienteController extends Controller
 
     public function destroy(Cliente $cliente)
     {
-        $this->authorize('clientes.excluir');
         $cliente->delete();
         return redirect()->back()->with('success','Excluído');
     }

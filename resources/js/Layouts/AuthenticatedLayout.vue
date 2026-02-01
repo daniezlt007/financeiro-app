@@ -209,9 +209,6 @@ watch(
                       <DropdownLink :href="route('audit-logs.index')" :class="{ 'font-semibold': route().current('audit-logs.*') }">
                         Auditoria
                       </DropdownLink>
-                      <DropdownLink :href="route('permissoes.index')" :class="{ 'font-semibold': route().current('permissoes.*') }">
-                        Permissões
-                      </DropdownLink>
                     </template>
                   </Dropdown>
                   <!-- ▲ Fim do menu Configurações -->
@@ -348,9 +345,6 @@ watch(
                 </ResponsiveNavLink>
                 <ResponsiveNavLink :href="route('audit-logs.index')" :active="route().current('audit-logs.*')">
                   Auditoria
-                </ResponsiveNavLink>
-                <ResponsiveNavLink :href="route('permissoes.index')" :active="route().current('permissoes.*')">
-                  Permissões
                 </ResponsiveNavLink>
               </div>
             </template>

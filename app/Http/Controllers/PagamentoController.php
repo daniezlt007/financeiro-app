@@ -9,7 +9,6 @@ class PagamentoController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize('pagamentos.visualizar');
         $query = Pagamento::with(['venda.itens.servico', 'venda.itens.produto']);
         
         // Filtro por serviço
@@ -70,28 +69,24 @@ class PagamentoController extends Controller
 
     public function create()
     {
-        $this->authorize('pagamentos.criar');
         $vendas = Venda::latest()->get();
         return Inertia::render('Pagamentos/Create', ['vendas' => $vendas]);
     }
 
     public function show(Pagamento $pagamento)
     {
-        $this->authorize('pagamentos.visualizar');
         $pagamento->load(['venda.itens.servico', 'venda.itens.produto']);
         return Inertia::render('Pagamentos/Show', ['pagamento' => $pagamento]);
     }
 
     public function edit(Pagamento $pagamento)
     {
-        $this->authorize('pagamentos.editar');
         $vendas = Venda::latest()->get();
         return Inertia::render('Pagamentos/Edit', ['pagamento' => $pagamento, 'vendas' => $vendas]);
     }
 
     public function store(Request $request)
     {
-        $this->authorize('pagamentos.criar');
         $user = auth()->user();
         
         $validated = $request->validate([
@@ -110,7 +105,6 @@ class PagamentoController extends Controller
 
     public function update(Request $request, Pagamento $pagamento)
     {
-        $this->authorize('pagamentos.editar');
         $user = auth()->user();
         
         $validated = $request->validate([
@@ -137,7 +131,6 @@ class PagamentoController extends Controller
      */
     public function baixaLote(Request $request)
     {
-        $this->authorize('financeiro.baixa-lote');
         $query = Pagamento::with(['venda.itens.servico', 'venda.itens.produto'])
             ->where('status', 'PENDENTE');
         
@@ -188,7 +181,6 @@ class PagamentoController extends Controller
      */
     public function processarBaixaLote(Request $request)
     {
-        $this->authorize('financeiro.baixa-lote');
         $validated = $request->validate([
             'pagamento_ids' => 'required|array',
             'pagamento_ids.*' => 'required|exists:pagamentos,id',

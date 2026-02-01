@@ -47,16 +47,6 @@ class CheckPermissions
                 return $next($request);
         }
 
-        // Permissões granulares Spatie: admin tem todas, senão verifica
-        if ($user->is_admin) {
-            return $next($request);
-        }
-
-        $permissions = explode('|', $permission);
-        if (!$user->canAny($permissions)) {
-            abort(403, 'Acesso negado. Você não tem permissão para esta ação.');
-        }
-
-        return $next($request);
+        abort(403, 'Acesso negado. Permissão não reconhecida.');
     }
 }

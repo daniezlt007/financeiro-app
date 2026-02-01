@@ -5,8 +5,7 @@ use App\Http\Controllers\{
   DashboardController, ClienteController, ServicoController, ProdutoController,
   VendaController, PagamentoController, MetaController, RecorrenciaController,
   ProfileController, EmpresaController, FuncionarioController, UserController,
-  TransacaoController, AuditLogController, RelatorioPagamentosController,
-  PermissaoController
+  TransacaoController, AuditLogController, RelatorioPagamentosController
 };
 
 Route::get('/', fn() => redirect()->route('dashboard'));
@@ -63,11 +62,6 @@ Route::middleware(['auth'])->group(function () {
     // Logs de Auditoria - apenas admin
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show');
-
-    // Permissões - apenas admin
-    Route::get('/permissoes', [PermissaoController::class, 'index'])->name('permissoes.index');
-    Route::put('/permissoes/roles/{role}', [PermissaoController::class, 'updateRolePermissions'])->name('permissoes.roles.update');
-    Route::put('/permissoes/users/{user}', [PermissaoController::class, 'updateUserRoles'])->name('permissoes.users.update');
   });
 
   // Profile - acessível por todos os usuários autenticados

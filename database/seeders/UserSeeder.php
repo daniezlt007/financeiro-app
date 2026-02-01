@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -22,8 +21,8 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Criar usuário funcionário com role Gerente
-        $funcionario = User::updateOrCreate(
+        // Criar usuário funcionário (não admin)
+        User::updateOrCreate(
             ['email' => 'funcionario@example.com'],
             [
                 'name' => 'Funcionário Teste',
@@ -32,10 +31,6 @@ class UserSeeder extends Seeder
                 'empresa_id' => null,
             ]
         );
-        $gerente = Role::where('name', 'Gerente')->where('guard_name', 'web')->first();
-        if ($gerente) {
-            $funcionario->syncRoles([$gerente]);
-        }
 
         // Criar usuário test@example.com como admin
         User::updateOrCreate(
@@ -51,6 +46,6 @@ class UserSeeder extends Seeder
         $this->command->info('Usuários criados/atualizados:');
         $this->command->line('- admin@example.com (Administrador) - senha: password');
         $this->command->line('- test@example.com (Administrador) - senha: password');
-        $this->command->line('- funcionario@example.com (Funcionário/Gerente) - senha: password');
+        $this->command->line('- funcionario@example.com (Funcionário) - senha: password');
     }
 }

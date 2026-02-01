@@ -11,7 +11,6 @@ class VendaController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorize('vendas.visualizar');
         $query = Venda::with(['funcionario', 'pagamentos']);
         
         // Busca em todos os campos
@@ -41,7 +40,6 @@ class VendaController extends Controller
 
     public function create()
     {
-        $this->authorize('vendas.criar');
         $user = auth()->user();
         
         // Buscar serviços: próprios da empresa OU compartilhados com a empresa
@@ -82,7 +80,6 @@ class VendaController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('vendas.criar');
         $user = auth()->user();
         
         $validated = $request->validate([
@@ -185,14 +182,12 @@ class VendaController extends Controller
 
     public function show(Venda $venda)
     {
-        $this->authorize('vendas.visualizar');
         $venda->load(['funcionario', 'itens.servico', 'itens.produto', 'pagamentos']);
         return Inertia::render('Vendas/Show', ['item' => $venda]);
     }
 
     public function recibo(Venda $venda)
     {
-        $this->authorize('vendas.visualizar');
         $venda->load(['funcionario', 'itens.servico', 'itens.produto', 'pagamentos', 'user']);
         
         // Criar hash único para o recibo (baseado em dados da venda + data)
@@ -209,7 +204,6 @@ class VendaController extends Controller
 
     public function edit(Venda $venda)
     {
-        $this->authorize('vendas.editar');
         $user = auth()->user();
         
         // Buscar serviços: próprios da empresa OU compartilhados com a empresa
@@ -253,7 +247,6 @@ class VendaController extends Controller
 
     public function update(Request $request, Venda $venda)
     {
-        $this->authorize('vendas.editar');
         $user = auth()->user();
         
         $validated = $request->validate([
@@ -333,7 +326,6 @@ class VendaController extends Controller
 
     public function destroy(Venda $venda)
     {
-        $this->authorize('vendas.excluir');
         // Excluir transações financeiras vinculadas
         \App\Models\Transacao::where('venda_id', $venda->id)->delete();
         
