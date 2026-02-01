@@ -37,24 +37,10 @@ class Venda extends Model
     public function pagamentos(){ return $this->hasMany(Pagamento::class); }
     public function user(){ return $this->belongsTo(User::class); }
     
-    // Valores permitidos para o campo parceiro
-    public static function getParceirosDisponiveis()
+    // Parceiros cadastrados (do banco de dados)
+    public static function getParceirosDisponiveis(): array
     {
-        return [
-            'THAI VEICULOS',
-            'DUNORTE ANANINDEUA',
-            'DU NORTE BELEM',
-            'DU NORTE PAC',
-            'FÊNIX',
-            'PSA ANANINDEUA',
-            'PSA BELÉM',
-            'FIAT',
-            'GWM',
-            'TROPICAL NISSAN ANANINDEUA',
-            'TROPICAL NISSAN BELÉM',
-            'UNIQUE',
-            'GAC BELÉM'
-        ];
+        return \App\Models\Parceiro::orderBy('nome_parceiro')->pluck('nome_parceiro')->toArray();
     }
 
 }

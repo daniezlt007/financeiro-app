@@ -5,7 +5,7 @@
         <h1 class="text-3xl font-bold text-gray-900">Vendas</h1>
         <p class="mt-2 text-gray-600">Visualize todas as vendas realizadas</p>
       </div>
-      <a v-if="can('vendas.criar')" href="/vendas/create" class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+      <a :href="route('vendas.create')" class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
         + Nova Venda
       </a>
     </div>
@@ -65,10 +65,10 @@
               </td>
               <td class="p-3 text-center">
                 <div class="flex justify-center gap-3">
-                  <a v-if="can('vendas.visualizar')" :href="`/vendas/${v.id}`" class="text-indigo-600 hover:text-indigo-800 font-medium">Visualizar</a>
-                  <a v-if="can('vendas.editar')" :href="`/vendas/${v.id}/edit`" class="text-green-600 hover:text-green-800 font-medium">Editar</a>
-                  <a v-if="can('vendas.visualizar')" :href="`/vendas/${v.id}/recibo`" target="_blank" class="text-purple-600 hover:text-purple-800 font-medium">Recibo</a>
-                  <button v-if="can('vendas.excluir')" @click.prevent="deleteVenda(v.id)" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>
+                  <a :href="`/vendas/${v.id}`" class="text-indigo-600 hover:text-indigo-800 font-medium">Visualizar</a>
+                  <a :href="`/vendas/${v.id}/edit`" class="text-green-600 hover:text-green-800 font-medium">Editar</a>
+                  <a :href="`/vendas/${v.id}/recibo`" target="_blank" class="text-purple-600 hover:text-purple-800 font-medium">Recibo</a>
+                  <button v-if="isAdmin" @click.prevent="deleteVenda(v.id)" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>
                 </div>
               </td>
             </tr>
@@ -116,7 +116,7 @@ import { ref, computed } from 'vue'
 import Card from '@/Components/Card.vue'
 import { usePermissions } from '@/composables/usePermissions'
 
-const { can } = usePermissions()
+const { isAdmin } = usePermissions()
 const props = defineProps({ data: Object })
 
 // Inicializar busca da URL (query string)
