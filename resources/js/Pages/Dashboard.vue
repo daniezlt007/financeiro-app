@@ -1,7 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { usePermissions } from '@/composables/usePermissions';
 
+const { can } = usePermissions();
 const props = defineProps({
     cards: Object,
     vendasRecentes: Array
@@ -48,7 +50,7 @@ export default { layout: null }
                 <!-- Cards de Métricas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <!-- Faturamento Hoje -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.faturamento')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
@@ -69,7 +71,7 @@ export default { layout: null }
                     </div>
 
                     <!-- Vendas Hoje -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.faturamento')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
@@ -90,7 +92,7 @@ export default { layout: null }
                     </div>
 
                     <!-- Faturamento Mês -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.faturamento')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
@@ -111,7 +113,7 @@ export default { layout: null }
                     </div>
 
                     <!-- Total Clientes -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.clientes')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
@@ -135,7 +137,7 @@ export default { layout: null }
                 <!-- Cards Secundários -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <!-- Produtos -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.produtos')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -152,7 +154,7 @@ export default { layout: null }
                     </div>
 
                     <!-- Serviços -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.servicos')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -169,7 +171,7 @@ export default { layout: null }
                     </div>
 
                     <!-- Pagamentos Pendentes -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div v-if="can('dashboard.pendentes')" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -188,11 +190,11 @@ export default { layout: null }
                 </div>
 
                 <!-- Vendas Recentes -->
-                <div class="bg-white shadow-sm sm:rounded-lg">
+                <div v-if="can('dashboard.vendas_recentes')" class="bg-white shadow-sm sm:rounded-lg">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-medium text-gray-900">Vendas Recentes</h3>
-                            <Link :href="route('vendas.index')" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <Link v-if="can('vendas.ver')" :href="route('vendas.index')" class="text-blue-600 hover:text-blue-800 text-sm">
                                 Ver todas
                             </Link>
                         </div>

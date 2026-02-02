@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         // disponibiliza o ID para outros seeders
         config(['seed.empresa_id' => $empresa->id]);
         $this->call(ServicosSeeder::class);
+        $this->call(PermissionSeeder::class);
         $this->call(UserSeeder::class);
 
         User::factory()->create([

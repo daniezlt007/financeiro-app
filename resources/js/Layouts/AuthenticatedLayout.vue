@@ -8,12 +8,12 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue'
 import NotificationContainer from '@/Components/NotificationContainer.vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useNotificationsStore } from '@/stores/notifications'
+import { usePermissions } from '@/composables/usePermissions'
 
 const showingNavigationDropdown = ref(false)
-
-// props globais do Inertia
 const page = usePage()
 const user = computed(() => page.props?.auth?.user ?? null)
+const { can, canAny, isAdmin } = usePermissions()
 
 const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
 
@@ -61,8 +61,8 @@ watch(
                   Dashboard
                 </NavLink>
 
-                <!-- ▼ Vendas (dropdown com subitens) - todos os usuários -->
-                <Dropdown align="left" width="48">
+                <!-- ▼ Vendas -->
+                <Dropdown v-if="canAny('vendas.ver','vendas.criar','vendas.editar','vendas.excluir','relatorios.vendas')" align="left" width="48">
                   <template #trigger>
                     <button
                       type="button"
@@ -79,18 +79,18 @@ watch(
                     </button>
                   </template>
                   <template #content>
-                    <DropdownLink :href="route('vendas.index')" :class="{ 'font-semibold': route().current('vendas.*') }">
+                    <DropdownLink v-if="canAny('vendas.ver','vendas.criar','vendas.editar','vendas.excluir')" :href="route('vendas.index')" :class="{ 'font-semibold': route().current('vendas.*') }">
                       Vendas
                     </DropdownLink>
-                    <DropdownLink :href="route('relatorios.vendas')" :class="{ 'font-semibold': route().current('relatorios.vendas') }">
+                    <DropdownLink v-if="can('relatorios.vendas')" :href="route('relatorios.vendas')" :class="{ 'font-semibold': route().current('relatorios.vendas') }">
                       Relatórios
                     </DropdownLink>
                   </template>
                 </Dropdown>
                 <!-- ▲ Fim do menu Vendas -->
 
-                <!-- ▼ Pagamentos (dropdown com subitens) - todos os usuários -->
-                <Dropdown align="left" width="48">
+                <!-- ▼ Pagamentos -->
+                <Dropdown v-if="canAny('pagamentos.ver','pagamentos.criar','pagamentos.editar','pagamentos.excluir','pagamentos.baixa_lote')" align="left" width="48">
                   <template #trigger>
                     <button
                       type="button"
@@ -107,10 +107,10 @@ watch(
                     </button>
                   </template>
                   <template #content>
-                    <DropdownLink :href="route('pagamentos.index')" :class="{ 'font-semibold': route().current('pagamentos.*') && !route().current('financeiro.baixa-lote') }">
+                    <DropdownLink v-if="canAny('pagamentos.ver','pagamentos.criar','pagamentos.editar','pagamentos.excluir')" :href="route('pagamentos.index')" :class="{ 'font-semibold': route().current('pagamentos.*') && !route().current('financeiro.baixa-lote') }">
                       Pagamentos
                     </DropdownLink>
-                    <DropdownLink :href="route('financeiro.baixa-lote')" :class="{ 'font-semibold': route().current('financeiro.baixa-lote') }">
+                    <DropdownLink v-if="can('pagamentos.baixa_lote')" :href="route('financeiro.baixa-lote')" :class="{ 'font-semibold': route().current('financeiro.baixa-lote') }">
                       Baixa em Lote
                     </DropdownLink>
                   </template>
@@ -151,10 +151,8 @@ watch(
                 </Dropdown>
                 <!-- ▲ Fim do menu Cadastros -->
 
-                <!-- Links para admin -->
-                <template v-if="user.is_admin">
-                  <!-- ▼ Financeiro (dropdown com subitens) - apenas admin -->
-                  <Dropdown align="left" width="48">
+                <!-- Financeiro (admin ou gerente) -->
+                <Dropdown v-if="canAny('financeiro.ver','financeiro.criar','financeiro.editar','financeiro.excluir')" align="left" width="48">
                     <template #trigger>
                       <button
                         type="button"
@@ -187,11 +185,9 @@ watch(
                         Relatórios
                       </DropdownLink>
                     </template>
-                  </Dropdown>
-                  <!-- ▲ Fim do menu Financeiro -->
-                  
-                  <!-- ▼ Configurações (dropdown com subitens) - apenas admin -->
-                  <Dropdown align="left" width="48">
+                </Dropdown>
+
+                <Dropdown v-if="isAdmin" align="left" width="48">
                     <template #trigger>
                       <button
                         type="button"
@@ -221,9 +217,7 @@ watch(
                         Auditoria
                       </DropdownLink>
                     </template>
-                  </Dropdown>
-                  <!-- ▲ Fim do menu Configurações -->
-                </template>
+                </Dropdown>
 
               </div>
             </div>
@@ -275,25 +269,26 @@ watch(
               Dashboard
             </ResponsiveNavLink>
 
-            <!-- Seção Vendas (subitens) - todos os usuários -->
-            <div class="px-3 pt-2 text-xs uppercase text-dekra-300">Vendas</div>
-            <ResponsiveNavLink :href="route('vendas.index')" :active="route().current('vendas.*')">
-              Vendas
-            </ResponsiveNavLink>
-            <ResponsiveNavLink :href="route('relatorios.vendas')" :active="route().current('relatorios.vendas')">
-              Relatórios
-            </ResponsiveNavLink>
+            <template v-if="canAny('vendas.ver','vendas.criar','vendas.editar','vendas.excluir','relatorios.vendas')">
+              <div class="px-3 pt-2 text-xs uppercase text-dekra-300">Vendas</div>
+              <ResponsiveNavLink v-if="canAny('vendas.ver','vendas.criar','vendas.editar','vendas.excluir')" :href="route('vendas.index')" :active="route().current('vendas.*')">
+                Vendas
+              </ResponsiveNavLink>
+              <ResponsiveNavLink v-if="can('relatorios.vendas')" :href="route('relatorios.vendas')" :active="route().current('relatorios.vendas')">
+                Relatórios
+              </ResponsiveNavLink>
+            </template>
 
-            <!-- Seção Pagamentos (subitens) - todos os usuários -->
-            <div class="px-3 pt-2 text-xs uppercase text-dekra-300">Pagamentos</div>
-            <ResponsiveNavLink :href="route('pagamentos.index')" :active="route().current('pagamentos.*') && !route().current('financeiro.baixa-lote')">
-              Pagamentos
-            </ResponsiveNavLink>
-            <ResponsiveNavLink :href="route('financeiro.baixa-lote')" :active="route().current('financeiro.baixa-lote')">
-              Baixa em Lote
-            </ResponsiveNavLink>
+            <template v-if="canAny('pagamentos.ver','pagamentos.criar','pagamentos.editar','pagamentos.excluir','pagamentos.baixa_lote')">
+              <div class="px-3 pt-2 text-xs uppercase text-dekra-300">Pagamentos</div>
+              <ResponsiveNavLink v-if="canAny('pagamentos.ver','pagamentos.criar','pagamentos.editar','pagamentos.excluir')" :href="route('pagamentos.index')" :active="route().current('pagamentos.*') && !route().current('financeiro.baixa-lote')">
+                Pagamentos
+              </ResponsiveNavLink>
+              <ResponsiveNavLink v-if="can('pagamentos.baixa_lote')" :href="route('financeiro.baixa-lote')" :active="route().current('financeiro.baixa-lote')">
+                Baixa em Lote
+              </ResponsiveNavLink>
+            </template>
 
-            <!-- Seção Cadastros -->
             <div class="px-3 pt-2 text-xs uppercase text-dekra-300">Cadastros</div>
             <ResponsiveNavLink :href="route('clientes.index')" :active="route().current('clientes.*')">
               Clientes
@@ -304,13 +299,11 @@ watch(
             <ResponsiveNavLink :href="route('parceiros.index')" :active="route().current('parceiros.*')">
               Parceiros
             </ResponsiveNavLink>
-            <ResponsiveNavLink v-if="user.is_admin" :href="route('produtos.index')" :active="route().current('produtos.*')">
+            <ResponsiveNavLink v-if="isAdmin" :href="route('produtos.index')" :active="route().current('produtos.*')">
               Produtos
             </ResponsiveNavLink>
 
-            <!-- Links para admin -->
-            <template v-if="user.is_admin">
-              <!-- Submenu Financeiro -->
+            <template v-if="canAny('financeiro.ver','financeiro.criar','financeiro.editar','financeiro.excluir')">
               <div class="border-l-4 border-dekra-500 pl-4 space-y-1">
                 <div class="text-xs font-semibold text-dekra-300 uppercase tracking-wider px-4 py-2">
                   Financeiro
@@ -331,8 +324,9 @@ watch(
                   Relatórios
                 </ResponsiveNavLink>
               </div>
-              
-              <!-- Submenu Configurações -->
+            </template>
+
+            <template v-if="isAdmin">
               <div class="border-l-4 border-dekra-500 pl-4 space-y-1">
                 <div class="text-xs font-semibold text-dekra-300 uppercase tracking-wider px-4 py-2">
                   Configurações

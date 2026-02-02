@@ -13,7 +13,10 @@ class RelatorioVendasController extends Controller
 {
     private function filtrar(Request $request, $paginated = false)
     {
-        $query = Venda::query()->with(['funcionario','itens.servico','itens.produto']);
+        $user = auth()->user();
+        $query = Venda::query()
+            ->with(['funcionario','itens.servico','itens.produto'])
+            ->when(!$user->is_admin && $user->empresa_id, fn($q) => $q->where('empresa_id', $user->empresa_id));
 
         if ($request->filled('data_inicial')) {
             $query->whereDate('data', '>=', $request->data_inicial);
@@ -106,13 +109,21 @@ class RelatorioVendasController extends Controller
             $vendas = $this->filtrar($request, true); // true para paginação
             $totais = $this->calcularTotais($request);
 
+            $user = auth()->user();
             return Inertia::render('Relatorios/Vendas', [
                 'filtros'   => $request->only(['data_inicial','data_final','servico_id','user_id','parceiro']),
                 'vendas'    => $vendas,
                 'totais'    => $totais,
-                // 👇 alias corrige o erro de coluna inexistente
-                'servicos'  => Servico::select('id','tipo_servico as nome')->orderBy('tipo_servico')->get(),
-                'usuarios'  => \App\Models\Funcionario::select('id','nome_completo as name')->orderBy('nome_completo')->get(),
+                'servicos'  => Servico::query()
+                    ->when(!$user->is_admin && $user->empresa_id, fn($q) => $q->where('empresa_id', $user->empresa_id))
+                    ->select('id','tipo_servico as nome')
+                    ->orderBy('tipo_servico')
+                    ->get(),
+                'usuarios'  => \App\Models\Funcionario::query()
+                    ->when(!$user->is_admin && $user->empresa_id, fn($q) => $q->where('empresa_id', $user->empresa_id))
+                    ->select('id','nome_completo as name')
+                    ->orderBy('nome_completo')
+                    ->get(),
                 'parceiros' => Venda::getParceirosDisponiveis(),
             ]);
         } catch (\Exception $e) {

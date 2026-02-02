@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Empresa;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,8 +11,10 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $empresaId = config('seed.empresa_id') ?? Empresa::first()?->id;
+
         // Criar usuário admin
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Administrador',
@@ -20,20 +23,22 @@ class UserSeeder extends Seeder
                 'empresa_id' => null,
             ]
         );
+        $admin->syncRoles(['admin']);
 
         // Criar usuário funcionário (não admin)
-        User::updateOrCreate(
+        $funcionario = User::updateOrCreate(
             ['email' => 'funcionario@example.com'],
             [
                 'name' => 'Funcionário Teste',
                 'password' => Hash::make('password'),
                 'is_admin' => false,
-                'empresa_id' => null,
+                'empresa_id' => $empresaId,
             ]
         );
+        $funcionario->syncRoles(['funcionario']);
 
         // Criar usuário test@example.com como admin
-        User::updateOrCreate(
+        $test = User::updateOrCreate(
             ['email' => 'test@example.com'],
             [
                 'name' => 'Teste Admin',
@@ -42,6 +47,7 @@ class UserSeeder extends Seeder
                 'empresa_id' => null,
             ]
         );
+        $test->syncRoles(['admin']);
 
         $this->command->info('Usuários criados/atualizados:');
         $this->command->line('- admin@example.com (Administrador) - senha: password');

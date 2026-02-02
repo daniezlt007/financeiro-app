@@ -13,7 +13,12 @@ class RelatorioPagamentosController extends Controller
 {
     private function filtrar(Request $request, $paginated = false)
     {
-        $query = Pagamento::query()->with(['venda.itens.servico', 'venda.itens.produto', 'venda.funcionario']);
+        $user = auth()->user();
+        $query = Pagamento::query()
+            ->with(['venda.itens.servico', 'venda.itens.produto', 'venda.funcionario'])
+            ->when(!$user->is_admin && $user->empresa_id, function ($q) use ($user) {
+                $q->whereHas('venda', fn($q) => $q->where('empresa_id', $user->empresa_id));
+            });
 
         if ($request->filled('data_inicial')) {
             $query->whereDate('data', '>=', $request->data_inicial);
@@ -122,11 +127,16 @@ class RelatorioPagamentosController extends Controller
             $pagamentos = $this->filtrar($request, true);
             $totais = $this->calcularTotais($request);
 
+            $user = auth()->user();
             return Inertia::render('Relatorios/Pagamentos', [
                 'filtros'   => $request->only(['data_inicial','data_final','servico_id','status','parceiro']),
                 'pagamentos' => $pagamentos,
                 'totais'    => $totais,
-                'servicos'  => Servico::select('id','tipo_servico as nome')->orderBy('tipo_servico')->get(),
+                'servicos'  => Servico::query()
+                    ->when(!$user->is_admin && $user->empresa_id, fn($q) => $q->where('empresa_id', $user->empresa_id))
+                    ->select('id','tipo_servico as nome')
+                    ->orderBy('tipo_servico')
+                    ->get(),
                 'parceiros' => Venda::getParceirosDisponiveis(),
             ]);
         } catch (\Exception $e) {

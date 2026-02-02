@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, \App\Traits\Auditable;
+    use HasFactory, Notifiable, \App\Traits\Auditable, \Spatie\Permission\Traits\HasRoles;
 
     /**
      * The attributes that are mass assignable.

@@ -9,7 +9,11 @@ class PagamentoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pagamento::with(['venda.itens.servico', 'venda.itens.produto']);
+        $user = auth()->user();
+        $query = Pagamento::with(['venda.itens.servico', 'venda.itens.produto'])
+            ->when(!$user->is_admin && $user->empresa_id, function ($q) use ($user) {
+                $q->whereHas('venda', fn($q) => $q->where('empresa_id', $user->empresa_id));
+            });
         
         // Filtro por serviço
         if ($request->filled('servico_id')) {
@@ -51,8 +55,7 @@ class PagamentoController extends Controller
         }
         
         $data = $query->latest('data')->paginate(20)->withQueryString();
-        
-        $user = auth()->user();
+
         $servicos = Servico::select('id','tipo_servico as nome')
             ->when(!($user->is_admin ?? false), function($q) use ($user) {
                 return $q->where('empresa_id', $user->empresa_id);
@@ -69,19 +72,34 @@ class PagamentoController extends Controller
 
     public function create()
     {
-        $vendas = Venda::latest()->get();
+        $user = auth()->user();
+        $vendas = Venda::query()
+            ->when(!$user->is_admin && $user->empresa_id, fn($q) => $q->where('empresa_id', $user->empresa_id))
+            ->latest()
+            ->get();
         return Inertia::render('Pagamentos/Create', ['vendas' => $vendas]);
     }
 
     public function show(Pagamento $pagamento)
     {
+        $user = auth()->user();
+        if (!$user->is_admin && $user->empresa_id && ($pagamento->venda->empresa_id ?? null) !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
         $pagamento->load(['venda.itens.servico', 'venda.itens.produto']);
         return Inertia::render('Pagamentos/Show', ['pagamento' => $pagamento]);
     }
 
     public function edit(Pagamento $pagamento)
     {
-        $vendas = Venda::latest()->get();
+        $user = auth()->user();
+        if (!$user->is_admin && $user->empresa_id && ($pagamento->venda->empresa_id ?? null) !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
+        $vendas = Venda::query()
+            ->when(!$user->is_admin && $user->empresa_id, fn($q) => $q->where('empresa_id', $user->empresa_id))
+            ->latest()
+            ->get();
         return Inertia::render('Pagamentos/Edit', ['pagamento' => $pagamento, 'vendas' => $vendas]);
     }
 
@@ -98,7 +116,14 @@ class PagamentoController extends Controller
         ]);
         
         $validated['user_id'] = $user->id;
-        
+
+        if (!$user->is_admin && $user->empresa_id) {
+            $venda = Venda::findOrFail($validated['venda_id']);
+            if ($venda->empresa_id !== $user->empresa_id) {
+                abort(403, 'Acesso negado.');
+            }
+        }
+
         Pagamento::create($validated);
         return back()->with('success','Pagamento registrado com sucesso!');
     }
@@ -106,7 +131,13 @@ class PagamentoController extends Controller
     public function update(Request $request, Pagamento $pagamento)
     {
         $user = auth()->user();
-        
+        if (!$user->is_admin && $user->empresa_id) {
+            $pagamento->load('venda');
+            if (($pagamento->venda->empresa_id ?? null) !== $user->empresa_id) {
+                abort(403, 'Acesso negado.');
+            }
+        }
+
         $validated = $request->validate([
             'venda_id' => 'required|exists:vendas,id',
             'data_pagamento' => 'required|date',
@@ -131,8 +162,12 @@ class PagamentoController extends Controller
      */
     public function baixaLote(Request $request)
     {
+        $user = auth()->user();
         $query = Pagamento::with(['venda.itens.servico', 'venda.itens.produto'])
-            ->where('status', 'PENDENTE');
+            ->where('status', 'PENDENTE')
+            ->when(!$user->is_admin && $user->empresa_id, function ($q) use ($user) {
+                $q->whereHas('venda', fn($q) => $q->where('empresa_id', $user->empresa_id));
+            });
         
         // Filtro por data de início
         if ($request->filled('data_inicio')) {
@@ -187,8 +222,12 @@ class PagamentoController extends Controller
         ]);
 
         $user = auth()->user();
-        $pagamentos = Pagamento::whereIn('id', $validated['pagamento_ids'])
+        $pagamentos = Pagamento::with('venda')
+            ->whereIn('id', $validated['pagamento_ids'])
             ->where('status', 'PENDENTE')
+            ->when(!$user->is_admin && $user->empresa_id, function ($q) use ($user) {
+                $q->whereHas('venda', fn($q) => $q->where('empresa_id', $user->empresa_id));
+            })
             ->get();
 
         if ($pagamentos->isEmpty()) {

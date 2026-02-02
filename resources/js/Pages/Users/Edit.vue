@@ -5,8 +5,30 @@ import Card from '@/Components/Card.vue';
 
 const props = defineProps({
   item: Object,
-  empresas: Array
+  empresas: Array,
+  permissionGroups: Object,
+  userPermissions: Array
 });
+
+function togglePermission(name) {
+  const i = form.permissions.indexOf(name)
+  if (i >= 0) {
+    form.permissions = form.permissions.filter((p) => p !== name)
+  } else {
+    form.permissions = [...form.permissions, name]
+  }
+}
+
+function toggleGroup(groupPerms, checked) {
+  groupPerms.forEach((p) => {
+    const i = form.permissions.indexOf(p.name)
+    if (checked && i < 0) {
+      form.permissions = [...form.permissions, p.name]
+    } else if (!checked && i >= 0) {
+      form.permissions = form.permissions.filter((x) => x !== p.name)
+    }
+  })
+}
 
 const form = useForm({
   name: props.item.name,
@@ -15,7 +37,8 @@ const form = useForm({
   password: '',
   password_confirmation: '',
   empresa_id: props.item.empresa_id || '',
-  is_admin: props.item.is_admin
+  is_admin: props.item.is_admin,
+  permissions: [...(props.userPermissions || [])]
 });
 
 const submit = () => {
@@ -102,7 +125,7 @@ export default { layout: null }
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
                 <select 
@@ -116,17 +139,53 @@ export default { layout: null }
                 </select>
                 <div v-if="form.errors.empresa_id" class="text-red-500 text-sm mt-1">{{ form.errors.empresa_id }}</div>
               </div>
+            </div>
+
+            <div class="border-t border-gray-200 pt-6">
+              <label class="flex items-center mb-4">
+                <input 
+                  v-model="form.is_admin" 
+                  type="checkbox" 
+                  class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                />
+                <span class="ml-2 text-sm font-medium text-gray-700">Administrador (acesso total ao sistema)</span>
+              </label>
+              <p class="text-sm text-gray-500 mb-4">Ou selecione os acessos específicos abaixo:</p>
               
-              <div>
-                <label class="flex items-center">
-                  <input 
-                    v-model="form.is_admin" 
-                    type="checkbox" 
-                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Administrador</span>
-                </label>
-                <div v-if="form.errors.is_admin" class="text-red-500 text-sm mt-1">{{ form.errors.is_admin }}</div>
+              <div class="space-y-6">
+                <div 
+                  v-for="(perms, groupName) in permissionGroups" 
+                  :key="groupName" 
+                  class="bg-gray-50 rounded-lg p-4"
+                >
+                  <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold text-gray-800">{{ groupName }}</h4>
+                    <label class="flex items-center text-xs text-gray-600">
+                      <input 
+                        type="checkbox" 
+                        :checked="perms.every((p) => form.permissions.includes(p.name))"
+                        @change="toggleGroup(perms, $event.target.checked)"
+                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span class="ml-1">Todos</span>
+                    </label>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label 
+                      v-for="perm in perms" 
+                      :key="perm.name"
+                      class="flex items-center text-sm text-gray-700 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+                    >
+                      <input 
+                        type="checkbox" 
+                        :checked="form.permissions.includes(perm.name)"
+                        @change="togglePermission(perm.name)"
+                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span class="ml-2">{{ perm.label }}</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
 

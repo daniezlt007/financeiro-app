@@ -47,6 +47,17 @@ class CheckPermissions
                 return $next($request);
         }
 
-        abort(403, 'Acesso negado. Permissão não reconhecida.');
+        // Admin tem acesso total
+        if ($user->is_admin) {
+            return $next($request);
+        }
+
+        // Permissões Spatie (ex: vendas.criar ou vendas.ver|vendas.editar)
+        $permissions = explode('|', $permission);
+        if ($user->canAny($permissions)) {
+            return $next($request);
+        }
+
+        abort(403, 'Acesso negado. Você não tem permissão para esta ação.');
     }
 }

@@ -182,12 +182,20 @@ class VendaController extends Controller
 
     public function show(Venda $venda)
     {
+        $user = auth()->user();
+        if (!$user->is_admin && $user->empresa_id && $venda->empresa_id !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
         $venda->load(['funcionario', 'itens.servico', 'itens.produto', 'pagamentos']);
         return Inertia::render('Vendas/Show', ['item' => $venda]);
     }
 
     public function recibo(Venda $venda)
     {
+        $user = auth()->user();
+        if (!$user->is_admin && $user->empresa_id && $venda->empresa_id !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
         $venda->load(['funcionario', 'itens.servico', 'itens.produto', 'pagamentos', 'user']);
         
         // Criar hash único para o recibo (baseado em dados da venda + data)
@@ -205,7 +213,10 @@ class VendaController extends Controller
     public function edit(Venda $venda)
     {
         $user = auth()->user();
-        
+        if (!$user->is_admin && $user->empresa_id && $venda->empresa_id !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
+
         // Buscar serviços: próprios da empresa OU compartilhados com a empresa
         $servicos = Servico::select('servicos.id','servicos.tipo_servico','servicos.preco_base')
             ->when(!($user->is_admin ?? false), function($q) use ($user) {
@@ -248,7 +259,10 @@ class VendaController extends Controller
     public function update(Request $request, Venda $venda)
     {
         $user = auth()->user();
-        
+        if (!$user->is_admin && $user->empresa_id && $venda->empresa_id !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
+
         $validated = $request->validate([
             'data' => 'required|date',
             'cliente_nome_completo' => 'required|string|max:255',
@@ -326,6 +340,11 @@ class VendaController extends Controller
 
     public function destroy(Venda $venda)
     {
+        $user = auth()->user();
+        if (!$user->is_admin && $user->empresa_id && $venda->empresa_id !== $user->empresa_id) {
+            abort(403, 'Acesso negado.');
+        }
+
         // Excluir transações financeiras vinculadas
         \App\Models\Transacao::where('venda_id', $venda->id)->delete();
         

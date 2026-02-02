@@ -34,10 +34,16 @@ class HandleInertiaRequests extends Middleware
             $user->load('empresa');
         }
 
+        $permissions = [];
+        if ($user && !$user->is_admin) {
+            $permissions = $user->getAllPermissions()->pluck('name')->toArray();
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $user,
+                'permissions' => $permissions,
             ],
         ];
     }

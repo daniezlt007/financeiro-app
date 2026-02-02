@@ -18,7 +18,7 @@
               <th class="text-left p-3 border-b font-medium text-gray-900">Nome</th>
               <th class="text-left p-3 border-b font-medium text-gray-900">Nome Completo</th>
               <th class="text-left p-3 border-b font-medium text-gray-900">Email</th>
-              <th class="text-left p-3 border-b font-medium text-gray-900">Tipo</th>
+              <th class="text-left p-3 border-b font-medium text-gray-900">Perfil</th>
               <th class="text-left p-3 border-b font-medium text-gray-900">Empresa</th>
               <th class="text-center p-3 border-b font-medium text-gray-900">Ações</th>
             </tr>
@@ -31,11 +31,9 @@
               <td class="p-3">
                 <span :class="[
                   'px-2 py-1 rounded-full text-xs font-medium',
-                  user.is_admin 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : 'bg-blue-100 text-blue-800'
+                  user.is_admin ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
                 ]">
-                  {{ user.is_admin ? 'Administrador' : 'Funcionário' }}
+                  {{ user.is_admin ? 'Administrador' : (user.permissions?.length || 0) + ' acessos' }}
                 </span>
               </td>
               <td class="p-3">{{ user.empresa?.nome_fantasia || '-' }}</td>
