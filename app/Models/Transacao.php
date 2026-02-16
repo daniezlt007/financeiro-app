@@ -26,6 +26,7 @@ class Transacao extends Model
         'forma_pagamento',
         'status',
         'venda_id',
+        'pagamento_id',
         'user_id',
         'comprovante_pagamento',
     ];

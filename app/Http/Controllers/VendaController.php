@@ -95,7 +95,9 @@ class VendaController extends Controller
             'valor_total' => 'required|numeric',
             'percentual_desconto' => 'nullable|numeric|min:0|max:100',
             'comissao_venda' => 'nullable|numeric',
-            'forma_pagamento' => 'required|in:DINHEIRO,PIX,CREDITO,DEBITO,BOLETO,TRANSFERENCIA,OUTRO',
+            'pagamentos' => 'required|array|min:1',
+            'pagamentos.*.forma_pagamento' => 'required|in:DINHEIRO,PIX,CREDITO,DEBITO,BOLETO,TRANSFERENCIA,OUTRO',
+            'pagamentos.*.valor' => 'required|numeric|min:0.01',
             'itens' => 'array|min:1',
             'itens.*.tipo_item' => 'required|in:SERVICO,PRODUTO',
             'itens.*.id' => 'required|integer',
@@ -103,8 +105,15 @@ class VendaController extends Controller
             'itens.*.valor_unitario' => 'required|numeric|min:0',
         ]);
 
+        // Validar que a soma dos pagamentos seja igual ao valor total
+        $somaPagamentos = collect($validated['pagamentos'])->sum('valor');
+        if (abs($somaPagamentos - (float) $validated['valor_total']) > 0.01) {
+            return back()->withErrors(['pagamentos' => 'A soma das formas de pagamento (R$ ' . number_format($somaPagamentos, 2, ',', '.') . ') deve ser igual ao valor total da venda (R$ ' . number_format($validated['valor_total'], 2, ',', '.') . ').']);
+        }
+
         // Adicionar empresa_id aos dados da venda
-        $vendaData = collect($validated)->except('itens')->toArray();
+        $vendaData = collect($validated)->except('itens', 'pagamentos')->toArray();
+        $vendaData['forma_pagamento'] = $validated['pagamentos'][0]['forma_pagamento']; // primeira forma para compatibilidade
         
         // Verificar se o usuário tem empresa_id, senão usar empresa padrão
         if (!$user->empresa_id) {
@@ -149,35 +158,32 @@ class VendaController extends Controller
             ]);
         }
         
-        // Criar pagamento automaticamente
-        $pagamentoData = [
-            'venda_id' => $venda->id,
-            'data' => $validated['data'],
-            'forma_pagamento' => $validated['forma_pagamento'],
-            'valor' => $validated['valor_total'],
-            'status' => 'PENDENTE',
-        ];
-        
-        // Adicionar user_id se a coluna existir (verificar se foi adicionada pela migration)
-        // Se a migration foi executada, adicionar user_id
-        if (Schema::hasColumn('pagamentos', 'user_id')) {
-            $pagamentoData['user_id'] = $user->id;
-        }
-        
-        try {
-            \App\Models\Pagamento::create($pagamentoData);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao criar pagamento:', [
-                'error' => $e->getMessage(),
+        // Criar múltiplos pagamentos (permite pagamento dividido: dinheiro + cartão, etc.)
+        foreach ($validated['pagamentos'] as $p) {
+            $pagamentoData = [
                 'venda_id' => $venda->id,
-                'pagamento_data' => $pagamentoData,
-                'trace' => $e->getTraceAsString()
-            ]);
-            // Retornar erro ao invés de continuar silenciosamente
-            return back()->withErrors(['error' => 'Erro ao criar pagamento: ' . $e->getMessage()])->withInput();
+                'data' => $validated['data'],
+                'forma_pagamento' => $p['forma_pagamento'],
+                'valor' => $p['valor'],
+                'status' => 'PENDENTE',
+            ];
+            if (Schema::hasColumn('pagamentos', 'user_id')) {
+                $pagamentoData['user_id'] = $user->id;
+            }
+            try {
+                \App\Models\Pagamento::create($pagamentoData);
+            } catch (\Exception $e) {
+                \Log::error('Erro ao criar pagamento:', [
+                    'error' => $e->getMessage(),
+                    'venda_id' => $venda->id,
+                    'pagamento_data' => $pagamentoData,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return back()->withErrors(['error' => 'Erro ao criar pagamento: ' . $e->getMessage()])->withInput();
+            }
         }
         
-        return redirect()->route('vendas.index')->with('success','Venda registrada e pagamento criado com sucesso!');
+        return redirect()->route('vendas.index')->with('success','Venda registrada e pagamentos criados com sucesso!');
     }
 
     public function show(Venda $venda)
@@ -245,7 +251,7 @@ class VendaController extends Controller
         
         $parceiros = \App\Models\Venda::getParceirosDisponiveis();
         
-        $venda->load(['itens.servico', 'itens.produto']);
+        $venda->load(['itens.servico', 'itens.produto', 'pagamentos']);
         
         return Inertia::render('Vendas/Edit', [
             'item' => $venda,
@@ -276,7 +282,9 @@ class VendaController extends Controller
             'valor_total' => 'required|numeric',
             'percentual_desconto' => 'nullable|numeric|min:0|max:100',
             'comissao_venda' => 'nullable|numeric',
-            'forma_pagamento' => 'required|in:DINHEIRO,PIX,CREDITO,DEBITO,BOLETO,TRANSFERENCIA,OUTRO',
+            'pagamentos' => 'required|array|min:1',
+            'pagamentos.*.forma_pagamento' => 'required|in:DINHEIRO,PIX,CREDITO,DEBITO,BOLETO,TRANSFERENCIA,OUTRO',
+            'pagamentos.*.valor' => 'required|numeric|min:0.01',
             'itens' => 'array|min:1',
             'itens.*.tipo_item' => 'required|in:SERVICO,PRODUTO',
             'itens.*.id' => 'required|integer',
@@ -284,8 +292,15 @@ class VendaController extends Controller
             'itens.*.valor_unitario' => 'required|numeric|min:0',
         ]);
 
+        // Validar que a soma dos pagamentos seja igual ao valor total
+        $somaPagamentos = collect($validated['pagamentos'])->sum('valor');
+        if (abs($somaPagamentos - (float) $validated['valor_total']) > 0.01) {
+            return back()->withErrors(['pagamentos' => 'A soma das formas de pagamento (R$ ' . number_format($somaPagamentos, 2, ',', '.') . ') deve ser igual ao valor total da venda (R$ ' . number_format($validated['valor_total'], 2, ',', '.') . ').']);
+        }
+
         // Atualizar dados da venda
-        $vendaData = collect($validated)->except('itens')->toArray();
+        $vendaData = collect($validated)->except('itens', 'pagamentos')->toArray();
+        $vendaData['forma_pagamento'] = $validated['pagamentos'][0]['forma_pagamento'];
         
         // Garantir que campos numéricos tenham valores padrão
         $vendaData['percentual_desconto'] = $vendaData['percentual_desconto'] ?? 0;
@@ -311,29 +326,25 @@ class VendaController extends Controller
             ]);
         }
         
-        // Atualizar pagamento vinculado
-        $pagamento = \App\Models\Pagamento::where('venda_id', $venda->id)->first();
-        if ($pagamento) {
-            $pagamento->update([
+        // Excluir pagamentos antigos (o observer deleta as transações vinculadas)
+        \App\Models\Pagamento::where('venda_id', $venda->id)->delete();
+        
+        // Criar novos pagamentos (permite pagamento dividido)
+        foreach ($validated['pagamentos'] as $p) {
+            $pagamentoData = [
+                'venda_id' => $venda->id,
                 'data' => $validated['data'],
-                'forma_pagamento' => $validated['forma_pagamento'],
-                'valor' => $validated['valor_total'],
-                'user_id' => $user->id, // Atualizar quem editou o pagamento
-            ]);
+                'forma_pagamento' => $p['forma_pagamento'],
+                'valor' => $p['valor'],
+                'status' => 'PENDENTE',
+            ];
+            if (Schema::hasColumn('pagamentos', 'user_id')) {
+                $pagamentoData['user_id'] = $user->id;
+            }
+            \App\Models\Pagamento::create($pagamentoData);
         }
         
-        // Atualizar transação financeira vinculada (se existir)
-        $transacao = \App\Models\Transacao::where('venda_id', $venda->id)
-            ->where('categoria', 'VENDA')
-            ->first();
-        if ($transacao) {
-            $transacao->update([
-                'data' => $validated['data'],
-                'valor' => $validated['valor_total'],
-                'forma_pagamento' => $validated['forma_pagamento'],
-                'descricao' => 'Venda #' . $venda->id . ' - ' . ($validated['cliente_nome_completo'] ?? 'Cliente não informado'),
-            ]);
-        }
+        // Transações são gerenciadas pelo PagamentoObserver (criadas com os novos pagamentos)
         
         return redirect()->route('vendas.index')->with('success','Venda atualizada com sucesso!');
     }

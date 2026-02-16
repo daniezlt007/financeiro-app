@@ -48,9 +48,13 @@ class SincronizarTodasTransacoes extends Command
                 continue;
             }
 
-            // Buscar transação existente
-            $transacao = Transacao::where('venda_id', $pagamento->venda_id)
-                ->where('categoria', 'VENDA')
+            // Buscar transação existente (por pagamento_id ou venda_id para retrocompatibilidade)
+            $transacao = Transacao::where('categoria', 'VENDA')
+                ->when(
+                    \Schema::hasColumn('transacoes', 'pagamento_id'),
+                    fn($q) => $q->where('pagamento_id', $pagamento->id),
+                    fn($q) => $q->where('venda_id', $pagamento->venda_id)
+                )
                 ->first();
 
             if ($force && $transacao) {
@@ -80,7 +84,7 @@ class SincronizarTodasTransacoes extends Command
 
             // Criar nova transação
             try {
-                $novaTransacao = Transacao::create([
+                $dados = [
                     'empresa_id' => $venda->empresa_id,
                     'tipo' => 'ENTRADA',
                     'categoria' => 'VENDA',
@@ -91,8 +95,12 @@ class SincronizarTodasTransacoes extends Command
                     'forma_pagamento' => $pagamento->forma_pagamento,
                     'venda_id' => $venda->id,
                     'user_id' => 1,
-                    'status' => $pagamento->status, // PENDENTE ou PAGO
-                ]);
+                    'status' => $pagamento->status,
+                ];
+                if (\Schema::hasColumn('transacoes', 'pagamento_id')) {
+                    $dados['pagamento_id'] = $pagamento->id;
+                }
+                $novaTransacao = Transacao::create($dados);
 
                 $criadas++;
                 $statusIcon = $pagamento->status === 'PAGO' ? '✓' : '⏳';

@@ -338,7 +338,9 @@ const salvar = () => {
     }
   })
   
-  router.put(route('financeiro.update', props.transacao.id), formData, {
+  formData.append('_method', 'put')
+  
+  router.post(route('financeiro.update', props.transacao.id), formData, {
     onFinish: () => {
       processing.value = false
     }

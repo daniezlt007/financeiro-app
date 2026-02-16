@@ -34,9 +34,13 @@ class DiagnosticarTransacoes extends Command
                 continue;
             }
 
-            // Buscar transação correspondente
-            $transacao = Transacao::where('venda_id', $pagamento->venda_id)
-                ->where('categoria', 'VENDA')
+            // Buscar transação correspondente (por pagamento_id ou venda_id)
+            $transacao = Transacao::where('categoria', 'VENDA')
+                ->when(
+                    \Schema::hasColumn('transacoes', 'pagamento_id'),
+                    fn($q) => $q->where('pagamento_id', $pagamento->id),
+                    fn($q) => $q->where('venda_id', $pagamento->venda_id)
+                )
                 ->first();
 
             if ($transacao) {

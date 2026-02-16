@@ -129,27 +129,15 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <p class="text-sm text-blue-800">
-              <strong>Informação:</strong> Um pagamento será criado automaticamente com status "PENDENTE" quando a venda for salva.
+              <strong>Informação:</strong> Adicione uma ou mais formas de pagamento. A soma deve ser igual ao valor total da venda. Ex: R$ 150 em dinheiro + R$ 150 no cartão.
             </p>
           </div>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">% Desconto</label>
             <input v-model="form.percentual_desconto" type="number" min="0" max="100" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-            <select v-model="form.forma_pagamento" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-              <option value="DINHEIRO">DINHEIRO</option>
-              <option value="PIX">PIX</option>
-              <option value="CREDITO">CRÉDITO</option>
-              <option value="DEBITO">DÉBITO</option>
-              <option value="BOLETO">BOLETO</option>
-              <option value="TRANSFERENCIA">TRANSFERENCIA</option>
-              <option value="OUTRO">OUTRO</option>
-            </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Vistoriador Responsável</label>
@@ -167,6 +155,43 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Valor Total (com desconto)</label>
             <input :value="valorTotal" type="number" step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-700 font-semibold" readonly />
+          </div>
+        </div>
+
+        <!-- Formas de Pagamento (parcelas) -->
+        <div class="border-t pt-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Formas de Pagamento</label>
+          <div class="space-y-3">
+            <div v-for="(p, idx) in form.pagamentos" :key="idx" class="flex gap-3 items-end">
+              <div class="flex-1">
+                <select v-model="p.forma_pagamento" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="DINHEIRO">Dinheiro</option>
+                  <option value="PIX">PIX</option>
+                  <option value="CREDITO">Cartão de Crédito</option>
+                  <option value="DEBITO">Cartão de Débito</option>
+                  <option value="BOLETO">Boleto</option>
+                  <option value="TRANSFERENCIA">Transferência</option>
+                  <option value="OUTRO">Outro</option>
+                </select>
+              </div>
+              <div class="w-32">
+                <input v-model.number="p.valor" type="number" step="0.01" min="0" placeholder="0,00" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <button v-if="form.pagamentos.length > 1" type="button" @click="removerParcela(idx)" class="p-2 text-red-600 hover:bg-red-50 rounded">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-4">
+              <button type="button" @click="adicionarParcela" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                + Adicionar parcela
+              </button>
+              <span class="text-sm" :class="somaPagamentosOk ? 'text-green-600' : 'text-red-600'">
+                Total informado: R$ {{ somaPagamentos.toFixed(2).replace('.', ',') }}
+                <span v-if="valorTotal"> | Valor da venda: R$ {{ parseFloat(valorTotal).toFixed(2).replace('.', ',') }}</span>
+                <span v-if="valorTotal && !somaPagamentosOk"> ✗</span>
+                <span v-else-if="valorTotal && somaPagamentosOk"> ✓</span>
+              </span>
+            </div>
           </div>
         </div>
       </Card>
@@ -250,7 +275,7 @@
   </div>
 </template>
 <script setup>
-import { reactive, computed, onMounted, ref } from 'vue'
+import { reactive, computed, onMounted, ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import Card from '@/Components/Card.vue'
 import axios from 'axios'
@@ -300,9 +325,28 @@ const form = useForm({
   valor_total: '',
   percentual_desconto: 0,
   comissao_venda: 0,
-  forma_pagamento: 'DINHEIRO',
+  pagamentos: [{ forma_pagamento: 'DINHEIRO', valor: 0 }],
   itens: []
 })
+
+const somaPagamentos = computed(() => form.pagamentos.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0))
+const somaPagamentosOk = computed(() => Math.abs(somaPagamentos.value - parseFloat(valorTotal.value || 0)) < 0.01)
+
+function adicionarParcela() {
+  form.pagamentos.push({ forma_pagamento: 'DINHEIRO', valor: 0 })
+}
+
+function removerParcela(idx) {
+  form.pagamentos.splice(idx, 1)
+}
+
+// Quando houver apenas uma parcela e o valor total mudar, preencher automaticamente
+watch(() => valorTotal.value, (novo) => {
+  if (form.pagamentos.length === 1 && novo) {
+    const val = parseFloat(novo)
+    if (!isNaN(val) && val > 0) form.pagamentos[0].valor = val
+  }
+}, { immediate: true })
 
 function add(){
   if(!novo.id || !novo.valor) return
@@ -318,6 +362,14 @@ function remover(idx) {
 }
 
 function submit() {
+  if (!somaPagamentosOk.value) {
+    alert('A soma das formas de pagamento deve ser igual ao valor total da venda.')
+    return
+  }
+  if (form.pagamentos.some(p => !p.valor || parseFloat(p.valor) <= 0)) {
+    alert('Informe o valor de cada parcela de pagamento.')
+    return
+  }
   // Preparar dados para envio
   const dados = {
     data: form.data_venda,
@@ -332,7 +384,7 @@ function submit() {
     valor_total: valorTotal.value,
     percentual_desconto: form.percentual_desconto || 0,
     comissao_venda: form.comissao_venda || 0,
-    forma_pagamento: form.forma_pagamento,
+    pagamentos: form.pagamentos.map(p => ({ forma_pagamento: p.forma_pagamento, valor: parseFloat(p.valor) || 0 })),
     itens: payloadItens.value
   }
   

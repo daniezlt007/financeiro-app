@@ -50,21 +50,23 @@ class SincronizarTransacoesPendentes extends Command
                 continue;
             }
 
-            // Verifica se já existe uma transação PENDENTE para esta venda
-            // Usa venda_id E status para permitir múltiplas transações da mesma venda (caso tenha sido paga e depois recriada)
-            $transacaoExistente = Transacao::where('venda_id', $pagamento->venda_id)
-                ->where('categoria', 'VENDA')
-                ->where('status', 'PENDENTE')
+            // Verifica se já existe uma transação para este pagamento
+            $transacaoExistente = Transacao::where('categoria', 'VENDA')
+                ->when(
+                    \Schema::hasColumn('transacoes', 'pagamento_id'),
+                    fn($q) => $q->where('pagamento_id', $pagamento->id),
+                    fn($q) => $q->where('venda_id', $pagamento->venda_id)->where('status', 'PENDENTE')
+                )
                 ->first();
 
             if ($transacaoExistente) {
-                $this->line("- Transação PENDENTE já existe para Venda #{$venda->id}. Ignorando.");
+                $this->line("- Transação PENDENTE já existe para Pagamento #{$pagamento->id} (Venda #{$venda->id}). Ignorando.");
                 $ignoradas++;
                 continue;
             }
 
             try {
-                Transacao::create([
+                $dados = [
                     'empresa_id' => $venda->empresa_id,
                     'tipo' => 'ENTRADA',
                     'categoria' => 'VENDA',
@@ -74,9 +76,13 @@ class SincronizarTransacoesPendentes extends Command
                     'observacoes' => 'Transação gerada automaticamente pela sincronização de pendentes',
                     'forma_pagamento' => $pagamento->forma_pagamento,
                     'venda_id' => $venda->id,
-                    'user_id' => 1, // Admin padrão
-                    'status' => 'PENDENTE', // Status pendente
-                ]);
+                    'user_id' => 1,
+                    'status' => 'PENDENTE',
+                ];
+                if (\Schema::hasColumn('transacoes', 'pagamento_id')) {
+                    $dados['pagamento_id'] = $pagamento->id;
+                }
+                Transacao::create($dados);
 
                 $criadas++;
                 $this->info("✓ Transação PENDENTE criada para Venda #{$venda->id} - Cliente: {$venda->cliente_nome_completo} - Valor: R$ {$pagamento->valor}");

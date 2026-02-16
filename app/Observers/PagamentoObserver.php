@@ -26,6 +26,7 @@ class PagamentoObserver
                 'observacoes' => 'Transação gerada automaticamente pela venda',
                 'forma_pagamento' => $pagamento->forma_pagamento,
                 'venda_id' => $venda->id,
+                'pagamento_id' => $pagamento->id,
                 'user_id' => auth()->id() ?? 1,
                 'status' => $pagamento->status, // PENDENTE ou PAGO
             ]);
@@ -40,10 +41,8 @@ class PagamentoObserver
     {
         // Verifica se o status mudou
         if ($pagamento->isDirty('status')) {
-            // Atualiza o status da transação vinculada
-            Transacao::where('venda_id', $pagamento->venda_id)
-                ->where('categoria', 'VENDA')
-                ->update(['status' => $pagamento->status]);
+            // Atualiza o status da transação vinculada a este pagamento
+            Transacao::where('pagamento_id', $pagamento->id)->update(['status' => $pagamento->status]);
         }
     }
 
@@ -53,9 +52,7 @@ class PagamentoObserver
      */
     public function deleted(Pagamento $pagamento): void
     {
-        // Remove a transação vinculada, independente do status
-        Transacao::where('venda_id', $pagamento->venda_id)
-            ->where('categoria', 'VENDA')
-            ->delete();
+        // Remove a transação vinculada a este pagamento
+        Transacao::where('pagamento_id', $pagamento->id)->delete();
     }
 }
