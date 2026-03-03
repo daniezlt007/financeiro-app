@@ -9,6 +9,8 @@ class Parceiro extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = ['nome_parceiro'];
 
     public function setNomeParceiroAttribute($value)

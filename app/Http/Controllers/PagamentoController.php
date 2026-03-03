@@ -219,6 +219,7 @@ class PagamentoController extends Controller
         $validated = $request->validate([
             'pagamento_ids' => 'required|array',
             'pagamento_ids.*' => 'required|exists:pagamentos,id',
+            'data_baixa' => 'required|date',
         ]);
 
         $user = auth()->user();
@@ -236,10 +237,11 @@ class PagamentoController extends Controller
 
         $baixados = 0;
         foreach ($pagamentos as $pagamento) {
-            // Atualiza o status para PAGO
+            // Atualiza o status para PAGO e a data do pagamento
             // O Observer automaticamente atualizará a transação vinculada
             $pagamento->update([
                 'status' => 'PAGO',
+                'data' => $validated['data_baixa'],
                 'user_id' => $user->id, // Registra quem fez a baixa
             ]);
             $baixados++;

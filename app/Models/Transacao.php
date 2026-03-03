@@ -102,6 +102,7 @@ class Transacao extends Model
         'DESPESA_VARIAVEL' => 'Despesa Variável',
         'FORNECEDOR' => 'Pagamento a Fornecedor',
         'SALARIO' => 'Salário',
+        'PAGAMENTO_PJ' => 'Pagamento PJ',
         'IMPOSTO' => 'Imposto',
         'OUTRAS_SAIDAS' => 'Outras Saídas',
     ];
